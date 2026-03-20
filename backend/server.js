@@ -12,9 +12,11 @@ app.use(express.json());
 
 const authRoutes = require('./routes/auth');
 const aiRoutes = require('./routes/ai');
+const courseRoutes = require('./routes/courses');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/courses', courseRoutes);
 
 app.get('/api', (req, res) => {
     res.json({ message: 'Learnify Backend API is running!' });

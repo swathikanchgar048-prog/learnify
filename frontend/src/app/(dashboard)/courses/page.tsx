@@ -11,17 +11,19 @@ export default function CoursesPage() {
     const { enrolledCourses, enrollCourse } = useAuthStore();
 
     useEffect(() => {
-        setCourses([
-            { id: 1, title: 'React Masterclass: Zero to Hero', instructor: 'John Doe', price: '$49.99', thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80', rating: 4.8, duration: '12h 30m' },
-            { id: 2, title: 'Python using DSA', instructor: 'Dr. Angela Yu', price: '$89.99', thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&q=80', rating: 4.9, duration: '22h 15m' },
-            { id: 3, title: 'Java using DSA', instructor: 'Tim Buchalka', price: '$74.99', thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80', rating: 4.7, duration: '40h 45m' },
-            { id: 4, title: 'Python Fullstack Development', instructor: 'Jose Portilla', price: '$99.00', thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80', rating: 4.9, duration: '55h 15m' },
-            { id: 5, title: 'Java Fullstack Development', instructor: 'Abdul Bari', price: '$89.50', thumbnail: 'https://images.unsplash.com/photo-1550439062-609e1531270e?w=800&q=80', rating: 4.8, duration: '60h 00m' },
-            { id: 6, title: 'Advanced SQL Mastery', instructor: 'Colt Steele', price: '$39.50', thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=800&q=80', rating: 4.9, duration: '15h 20m' },
-            { id: 7, title: 'Machine Learning A-Z', instructor: 'Kirill Eremenko', price: '$95.00', thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=80', rating: 4.9, duration: '44h 30m' },
-            { id: 8, title: 'Digital Marketing Masterclass', instructor: 'Evan Kim', price: '$49.99', thumbnail: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=800&q=80', rating: 4.8, duration: '20h 10m' },
-        ]);
-        setLoading(false);
+        fetch('/api/courses')
+            .then((res) => {
+                if (!res.ok) throw new Error('API Error');
+                return res.json();
+            })
+            .then((data) => {
+                setCourses(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Failed to load courses from DB:", err);
+                setLoading(false);
+            });
     }, []);
 
     return (

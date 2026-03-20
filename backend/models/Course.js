@@ -24,6 +24,18 @@ const Subject = sequelize.define('Subject', {
     },
     thumbnail: {
         type: DataTypes.STRING,
+    },
+    duration: {
+        type: DataTypes.STRING,
+        defaultValue: '0h 0m',
+    },
+    price: {
+        type: DataTypes.STRING,
+        defaultValue: 'Free',
+    },
+    rating: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0.0,
     }
 });
 
