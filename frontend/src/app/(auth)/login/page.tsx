@@ -27,13 +27,21 @@ export default function LoginPage() {
                 body: JSON.stringify({ email, password }),
             });
 
-            const data = await res.json();
+            const textData = await res.text();
+            let data;
+            try {
+                data = JSON.parse(textData);
+            } catch (err) {
+                console.error("Backend returned non-JSON response:", textData.slice(0, 100));
+                throw new Error("Could not connect to the server. Please check if the backend is running or NEXT_PUBLIC_API_URL is configured.");
+            }
+
             if (!res.ok) throw new Error(data.error || "Login failed");
 
             login(data.user, data.token);
             router.push("/dashboard");
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : String(err));
         } finally {
             setLoading(false);
         }
