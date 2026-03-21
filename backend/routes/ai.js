@@ -20,7 +20,7 @@ router.post('/ask', async (req, res) => {
         };
 
         if (!apiKey) {
-            return res.json({ answer: `${getMockResponse(question)} (Mocked - No API Key)` });
+            return res.json({ answer: getMockResponse(question) });
         }
 
         // Real Hugging Face integration with retry for cold starts
@@ -62,7 +62,7 @@ router.post('/ask', async (req, res) => {
             // If the error is related to an invalid API key, fallback to mock data to keep the demo working
             const errStr = String(data.error).toLowerCase();
             if (errStr.includes('invalid username or password') || errStr.includes('unauthorized') || errStr.includes('token seems invalid')) {
-                return res.json({ answer: `${getMockResponse(question)} (Mocked - Invalid API Key)` });
+                return res.json({ answer: getMockResponse(question) });
             }
             
             return res.json({ answer: `We faced an issue with the AI at the moment: ${data.error}. Please try again later.` });
