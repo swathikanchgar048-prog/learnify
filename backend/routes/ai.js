@@ -9,15 +9,18 @@ router.post('/ask', async (req, res) => {
         // For now, if the API KEY is not set, we mock the response to guarantee it works for the demo.
         const apiKey = process.env.HUGGINGFACE_API_KEY;
 
-        if (!apiKey) {
-            // Mock AI behavior
-            let answer = "That's a great question! Based on the context, components allow you to break the UI down into reusable pieces. Try building a simple component that returns a standard HTML element to practice.";
-
-            if (question.toLowerCase().includes('props')) {
-                answer = "Props (short for properties) allow you to pass data from a parent component to a child component. They are read-only and cannot be modified by the child.";
+        const getMockResponse = (q) => {
+            if (q.toLowerCase().includes('python')) {
+                return "Python is a high-level, widely-used programming language. Its main features include a simple, readable syntax, dynamic typing, automatic memory management, and a massive ecosystem of libraries. It's great for data science, web backend, and AI!";
             }
+            if (q.toLowerCase().includes('props')) {
+                return "Props (short for properties) allow you to pass data from a parent component to a child component. They are read-only and cannot be modified by the child.";
+            }
+            return "That's a great question! Based on the context, breaking down the problem into smaller pieces is key. Try practicing with some simple examples first.";
+        };
 
-            return res.json({ answer: `${answer} (Mocked - Add HuggingFace API key to backend/.env)` });
+        if (!apiKey) {
+            return res.json({ answer: `${getMockResponse(question)} (Mocked - No API Key)` });
         }
 
         // Real Hugging Face integration with retry for cold starts
@@ -55,6 +58,13 @@ router.post('/ask', async (req, res) => {
         } else if (data && data.error) {
             // Give a more descriptive error based on HuggingFace response
             console.error("HF Error:", data.error);
+            
+            // If the error is related to an invalid API key, fallback to mock data to keep the demo working
+            const errStr = String(data.error).toLowerCase();
+            if (errStr.includes('invalid username or password') || errStr.includes('unauthorized') || errStr.includes('token seems invalid')) {
+                return res.json({ answer: `${getMockResponse(question)} (Mocked - Invalid API Key)` });
+            }
+            
             return res.json({ answer: `We faced an issue with the AI at the moment: ${data.error}. Please try again later.` });
         } else if (data && typeof data.generated_text === 'string') {
              return res.json({ answer: data.generated_text });
