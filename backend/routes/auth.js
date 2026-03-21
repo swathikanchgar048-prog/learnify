@@ -12,42 +12,45 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
 
-        // Try real DB first
-        const existingUser = await User.findOne({ where: { email } }).catch(() => null);
-        if (existingUser) {
+        if (global.isDbConnected !== false) {
+            try {
+                // Try real DB first
+                const existingUser = await User.findOne({ where: { email } });
+                if (existingUser) {
+                    return res.status(400).json({ error: 'Email already in use' });
+                }
+
+                const salt = await bcrypt.genSalt(10);
+                const password_hash = await bcrypt.hash(password, salt);
+
+                await User.create({
+                    name,
+                    email,
+                    password_hash,
+                    role: role || 'STUDENT'
+                });
+
+                return res.status(201).json({ message: 'User registered successfully!' });
+            } catch (dbErr) {
+                global.isDbConnected = false; // Mark DB offline for future requests
+            }
+        }
+
+        // Fallback to in-memory DB if real DB is offline
+        if (mockUsers.find(u => u.email === email)) {
             return res.status(400).json({ error: 'Email already in use' });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const password_hash = await bcrypt.hash(password, salt);
-
-        await User.create({
+        mockUsers.push({
+            id: mockUsers.length + 1,
             name,
             email,
-            password_hash,
+            password, // In memory, we keep plain or hashed depending on needs. Keeping plain for mock simplicity.
             role: role || 'STUDENT'
         });
 
-        res.status(201).json({ message: 'User registered successfully!' });
+        return res.status(201).json({ message: 'User registered successfully! (In-Memory Mock)' });
     } catch (err) {
-        // Fallback to in-memory DB if real DB is offline
-        if (err.name === 'SequelizeConnectionError' || err.name === 'SequelizeHostNotFoundError' || err.parent) {
-            const { name, email, password, role } = req.body;
-
-            if (mockUsers.find(u => u.email === email)) {
-                return res.status(400).json({ error: 'Email already in use' });
-            }
-
-            mockUsers.push({
-                id: mockUsers.length + 1,
-                name,
-                email,
-                password, // In memory, we keep plain or hashed depending on needs. Keeping plain for mock simplicity.
-                role: role || 'STUDENT'
-            });
-
-            return res.status(201).json({ message: 'User registered successfully! (In-Memory Mock)' });
-        }
         res.status(500).json({ error: 'Server error during registration', details: err.message });
     }
 });
@@ -56,22 +59,25 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Try real DB first
-        try {
-            const user = await User.findOne({ where: { email } });
-            if (user) {
-                const isMatch = await bcrypt.compare(password, user.password_hash);
-                if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
+        if (global.isDbConnected !== false) {
+            // Try real DB first
+            try {
+                const user = await User.findOne({ where: { email } });
+                if (user) {
+                    const isMatch = await bcrypt.compare(password, user.password_hash);
+                    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
-                const token = jwt.sign(
-                    { id: user.id, role: user.role },
-                    process.env.JWT_SECRET || 'supersecretjwtkey',
-                    { expiresIn: '15m' }
-                );
-                return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+                    const token = jwt.sign(
+                        { id: user.id, role: user.role },
+                        process.env.JWT_SECRET || 'supersecretjwtkey',
+                        { expiresIn: '15m' }
+                    );
+                    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+                }
+            } catch (dbErr) {
+                global.isDbConnected = false;
+                // Suppress real db error to drop into mock fallback below
             }
-        } catch (dbErr) {
-            // Suppress real db error to drop into mock fallback below
         }
 
         // Drop into mock fallback if user not found in real DB or real DB offline

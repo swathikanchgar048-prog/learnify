@@ -37,10 +37,12 @@ const startServer = async () => {
     try {
         // Try to connect and sync DB. Alter creates missing tables.
         await sequelize.authenticate();
+        global.isDbConnected = true;
         console.log('Database connection has been established successfully.');
         await sequelize.sync({ alter: true });
         console.log('Database synced.');
     } catch (error) {
+        global.isDbConnected = false;
         console.error('Unable to connect to the database. The server will start, but DB features will fail:', error.message);
     }
 
