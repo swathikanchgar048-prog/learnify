@@ -25,7 +25,7 @@ router.post('/ask', async (req, res) => {
         let retries = 3;
         
         while (retries > 0) {
-            const hfRes = await fetch("https://api-inference.huggingface.co/models/google/flan-t5-large", {
+            const hfRes = await fetch("https://router.huggingface.co/hf-inference/models/google/flan-t5-large", {
                 headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
                 method: "POST",
                 body: JSON.stringify({
